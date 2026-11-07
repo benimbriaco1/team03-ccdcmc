@@ -24,5 +24,9 @@ New-NetFirewallRule -DisplayName "CompFW In RDP" -Direction Inbound -Action Allo
 # Inbound: AD ports from the DC only
 New-NetFirewallRule -DisplayName "CompFW In AD TCP" -Direction Inbound -Action Allow -Protocol TCP -LocalPort $tcp -RemoteAddress $ad | Out-Null
 New-NetFirewallRule -DisplayName "CompFW In AD UDP" -Direction Inbound -Action Allow -Protocol UDP -LocalPort $udp -RemoteAddress $ad | Out-Null
- 
+
+New-NetFirewallRule -DisplayName "Allow Inbound from Trusted Hosts" `
+  -Direction Inbound -Action Allow -Protocol Any `
+  -RemoteAddress 172.16.1.0/24,10.3.1.99/32 `
+  -Profile Any -Enabled True
 
