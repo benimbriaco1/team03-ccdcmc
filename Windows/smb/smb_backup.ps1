@@ -1,4 +1,4 @@
-$Backup = "C:\CCDC-Backup"
+$Backup = "C:\Backup"
 
 New-Item -ItemType Directory -Path $Backup -Force | Out-Null
 
