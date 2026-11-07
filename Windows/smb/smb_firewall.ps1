@@ -5,8 +5,8 @@ $ad  = Read-Host "IP of AD/DNS (pitwall):"
 # allow us to RDP in from LAN 
 $rdp = Read-Host "Network allowed to RDP in (e.g. 10.x.1.0/24 or 10.x.1.1)"
  
-# Default deny inbound and outbound on all profiles
-Set-NetFirewallProfile -Profile Domain,Private,Public -Enabled True -DefaultInboundAction Block -DefaultOutboundAction Block
+# Default deny inbound on all profiles
+Set-NetFirewallProfile -Profile Domain,Private,Public -Enabled True -DefaultInboundAction Block 
  
 # Remove rules from previous runs (matched by name)
 Remove-NetFirewallRule -DisplayName "CompFW*" -ErrorAction SilentlyContinue
@@ -25,8 +25,4 @@ New-NetFirewallRule -DisplayName "CompFW In RDP" -Direction Inbound -Action Allo
 New-NetFirewallRule -DisplayName "CompFW In AD TCP" -Direction Inbound -Action Allow -Protocol TCP -LocalPort $tcp -RemoteAddress $ad | Out-Null
 New-NetFirewallRule -DisplayName "CompFW In AD UDP" -Direction Inbound -Action Allow -Protocol UDP -LocalPort $udp -RemoteAddress $ad | Out-Null
  
-# Outbound: same ports to the DC only
-New-NetFirewallRule -DisplayName "CompFW Out AD TCP" -Direction Outbound -Action Allow -Protocol TCP -RemotePort $tcp -RemoteAddress $ad | Out-Null
-New-NetFirewallRule -DisplayName "CompFW Out AD UDP" -Direction Outbound -Action Allow -Protocol UDP -RemotePort $udp -RemoteAddress $ad | Out-Null
- 
-Write-Host "Success: default deny set; SMB, RDP ($rdp) and AD ports ($ad) allowed." -ForegroundColor Green
+
