@@ -8,7 +8,7 @@ Set-NetFirewallProfile -Profile Domain,Private,Public -Enabled True -DefaultInbo
 # Remove rules from previous runs (matched by name)
 Remove-NetFirewallRule -DisplayName "CompFW*" -ErrorAction SilentlyContinue
  
-$tcp = "53","88","135","389","445","464","636","3268","3269","9389","49152-65535"
+$tcp = "53","88","135","389","445","464","636","3268","3269","9389"
 $udp = "53","88","123","389","464"
  
 # Inbound: WinRM (HTTP/HTTPS) from anywhere
