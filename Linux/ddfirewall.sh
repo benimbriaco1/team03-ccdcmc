@@ -1,34 +1,31 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-DD_URL="https://ip-ranges.us5.datadoghq.com/"
+[ "$EUID" -eq 0 ] || { echo "Run as root (sudo)."; exit 1; }
+command -v jq   >/dev/null || { echo "Missing jq:   sudo apt install jq";   exit 1; }
+command -v curl >/dev/null || { echo "Missing curl: sudo apt install curl"; exit 1; }
 
-# Download Datadog IP ranges
-DD_JSON=$(curl -fsSL "$DD_URL")
+# Datadog US5 site; change the URL if you're on another site
+URL="https://ip-ranges.us5.datadoghq.com/"
 
-# Extract all IPv4 and IPv6 prefixes
-DD_RANGES=$(echo "$DD_JSON" | jq -r '
-    .prefixes_ipv4[], .prefixes_ipv6[]
-' | sort -u)
+# Collect every IPv4/IPv6 prefix from every section, deduplicated
+mapfile -t RANGES < <(curl -fsS "$URL" | jq -r '[.[] | objects | (.prefixes_ipv4[]?, .prefixes_ipv6[]?)] | unique | .[]')
+[ "${#RANGES[@]}" -gt 0 ] || { echo "Failed to retrieve Datadog IP ranges. Aborting."; exit 1; }
 
-if [[ -z "$DD_RANGES" ]]; then
-    echo "ERROR: Failed to retrieve Datadog IP ranges."
-    exit 1
-fi
+# Skip IPv6 entries if ufw has IPv6 turned off (ufw errors on them otherwise)
+if grep -qi '^IPV6=yes' /etc/default/ufw; then SKIP_V6=0; else SKIP_V6=1; fi
 
-# Configure UFW defaults
-ufw --force enable
-ufw default deny incoming
-ufw default allow outgoing
+# Trusted internal hosts: inbound
+for src in 172.16.1.0/24 10.3.1.99; do
+    ufw allow in from "$src" comment 'CompFW Trusted Internal'
+done
 
-# Allow traffic to and from Datadog
-while IFS= read -r IP; do
-    [[ -z "$IP" ]] && continue
+# Datadog: inbound and outbound
+for r in "${RANGES[@]}"; do
+    if [[ "$r" == *:* && "$SKIP_V6" -eq 1 ]]; then continue; fi
+    ufw allow in  from "$r" comment 'CompFW Datadog'
+    ufw allow out to   "$r" comment 'CompFW Datadog'
+done
 
-    ufw allow in from "$IP" comment 'Datadog official IP ranges'
-    ufw allow out to "$IP" comment 'Datadog official IP ranges'
-
-done <<< "$DD_RANGES"
-
-echo "Datadog IP ranges allowed."
-ufw status verbose
+ufw reload
+echo "Done. Datadog ranges processed: ${#RANGES[@]} (IPv6 skipped: $SKIP_V6)"
