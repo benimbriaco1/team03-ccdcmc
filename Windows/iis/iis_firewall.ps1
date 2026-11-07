@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 # allow ad to communicate w/host 
-$ad  = Read-Host "IP of AD/DNS (pitwall)"
+$ad  = Read-Host "IP of AD/DNS (pitwall):"
 # allow us to RDP in from LAN 
 $rdp = Read-Host "Network allowed to RDP in (e.g. e.g. 10.x.1.0/24 or 10.x.1.1)"
 
